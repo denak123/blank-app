@@ -1,0 +1,29 @@
+{pkgs}: {
+  deps = [
+    pkgs.qhull
+    pkgs.gtk3
+    pkgs.gobject-introspection
+    pkgs.ghostscript
+    pkgs.ffmpeg-full
+    pkgs.cairo
+    pkgs.cacert
+    pkgs.zlib
+    pkgs.tk
+    pkgs.tcl
+    pkgs.openjpeg
+    pkgs.libxcrypt
+    pkgs.libwebp
+    pkgs.libtiff
+    pkgs.libjpeg
+    pkgs.libimagequant
+    pkgs.lcms2
+    pkgs.freetype
+    pkgs.rustc
+    pkgs.libiconv
+    pkgs.cargo
+    pkgs.pkg-config
+    pkgs.arrow-cpp
+    pkgs.zip
+    pkgs.glibcLocales
+  ];
+}
