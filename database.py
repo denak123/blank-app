@@ -1,20 +1,18 @@
 import os
-from sqlalchemy import create_engine, Column, String, Float, Integer, select
+import pandas as pd
+from sqlalchemy import create_engine, Column, String, Float, Integer
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker
 
-# Load database URL from environment variables (NEVER hardcode credentials)
-DATABASE_URL = os.getenv('DATABASE_URL')
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
+# =================================================================
+# TEMPORARY WORKAROUND - DELETE BEFORE COMMITTING TO GIT!
+# Replace with your actual Supabase credentials
+SUPABASE_URL = "postgresql://postgres.nbyxzrsvfqoumgrcysvn:Acc010171!@aws-0-eu-west-2.pooler.supabase.com:6543/postgres"
+DATABASE_URL = f"{SUPABASE_URL}?sslmode=require"  # Enforce SSL
+# =================================================================
 
-# Enforce SSL for Supabase
-if "pooler.supabase.com" in DATABASE_URL:
-    DATABASE_URL += "?sslmode=require"
-
-# Initialize engine and session
+# Initialize database
 engine = create_engine(DATABASE_URL)
-SessionLocal = scoped_session(sessionmaker(bind=engine))
 Base = declarative_base()
 
 class Product(Base):
@@ -42,22 +40,26 @@ class Product(Base):
         }
 
 def init_db():
-    Base.metadata.create_all(engine)  # Create tables if they don't exist
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    return Session()
 
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    Session = sessionmaker(bind=engine)
+    return Session()
 
 class DatabaseManager:
     def __init__(self):
-        self.session = SessionLocal()
+        self.session = init_db()
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.session.close()
     
     def get_all_products(self):
-        products = self.session.scalars(select(Product)).all()
-        return [product.to_dict() for product in products]
+        return [product.to_dict() for product in self.session.query(Product).all()]
     
     def add_product(self, product_data):
         try:
@@ -68,7 +70,59 @@ class DatabaseManager:
         except Exception as e:
             self.session.rollback()
             return False, f"Error adding product: {str(e)}"
-        finally:
-            self.session.close()
     
-    # ... (similar fixes for update_product, delete_product, etc.)
+    def update_product(self, product_code, product_data):
+        try:
+            product = self.session.query(Product).filter_by(product_code=product_code).first()
+            if product:
+                for key, value in product_data.items():
+                    setattr(product, key, value)
+                self.session.commit()
+                return True, "Product updated successfully"
+            return False, "Product not found"
+        except Exception as e:
+            self.session.rollback()
+            return False, f"Error updating product: {str(e)}"
+    
+    def delete_product(self, product_code):
+        try:
+            product = self.session.query(Product).filter_by(product_code=product_code).first()
+            if product:
+                self.session.delete(product)
+                self.session.commit()
+                return True, "Product deleted successfully"
+            return False, "Product not found"
+        except Exception as e:
+            self.session.rollback()
+            return False, f"Error deleting product: {str(e)}"
+    
+    def import_catalog(self, df):
+        try:
+            products_data = df.to_dict('records')
+            batch_size = 500
+            for i in range(0, len(products_data), batch_size):
+                batch = products_data[i:i + batch_size]
+                for product_data in batch:
+                    product_data['unit_cost'] = float(product_data['unit_cost'])
+                    if 'discount' in product_data:
+                        product_data['discount'] = float(product_data['discount'])
+                    existing = self.session.query(Product).filter_by(
+                        product_code=product_data['product_code']
+                    ).first()
+                    
+                    if existing:
+                        for key, value in product_data.items():
+                            setattr(existing, key, value)
+                    else:
+                        new_product = Product(**product_data)
+                        self.session.add(new_product)
+                self.session.commit()
+            return True, f"Successfully imported {len(products_data)} products"
+        except Exception as e:
+            self.session.rollback()
+            return False, f"Error importing catalog: {str(e)}"
+
+if __name__ == "__main__":
+    print("Initializing database...")
+    init_db()
+    print("Temporary database setup complete. REMOVE HARDCODED CREDENTIALS BEFORE COMMITTING!")
