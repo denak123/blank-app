@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 # =================================================================
 # TEMPORARY WORKAROUND - DELETE BEFORE COMMITTING TO GIT!
 # Replace with your actual Supabase credentials
-DATABASE_URL = st.secrets(["DATABASE_URL"])
+DATABASE_URL = st.secrets["DATABASE"]["URL"]
 # =================================================================
 
 # Initialize database
