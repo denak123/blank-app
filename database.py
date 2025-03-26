@@ -1,3 +1,4 @@
+import streamlit as st
 import os
 import pandas as pd
 from sqlalchemy import create_engine, Column, String, Float, Integer
@@ -7,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 # =================================================================
 # TEMPORARY WORKAROUND - DELETE BEFORE COMMITTING TO GIT!
 # Replace with your actual Supabase credentials
-
+DATABASE_URL = st.secrets(["DATABASE_URL"])
 # =================================================================
 
 # Initialize database
