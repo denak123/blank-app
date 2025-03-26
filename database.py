@@ -7,8 +7,7 @@ from sqlalchemy.orm import sessionmaker
 # =================================================================
 # TEMPORARY WORKAROUND - DELETE BEFORE COMMITTING TO GIT!
 # Replace with your actual Supabase credentials
-SUPABASE_URL = "postgresql://postgres.nbyxzrsvfqoumgrcysvn:Acc010171!@aws-0-eu-west-2.pooler.supabase.com:6543/postgres"
-DATABASE_URL = f"{SUPABASE_URL}?sslmode=require"  # Enforce SSL
+
 # =================================================================
 
 # Initialize database
